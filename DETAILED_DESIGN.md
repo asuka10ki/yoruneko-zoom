@@ -16,6 +16,22 @@ index.ts
   └─ slack.ts
 ```
 
+GitHub Pages画面とCloudflare Worker中継APIを含めた全体構成:
+
+```text
+docs/index.html
+  └─ docs/app.js
+       ├─ docs/config.js
+       ├─ docs/data/runs.json
+       └─ Cloudflare Worker triggerEndpoint
+             └─ GitHub Actions workflow_dispatch
+                   └─ zoom-breakout-rooms.yml
+                        ├─ npm start
+                        ├─ scripts/update-dashboard-history.mjs
+                        ├─ scripts/update-issue-dashboard.mjs
+                        └─ GitHub Pages deploy
+```
+
 ## 2. モジュール設計
 
 ### 2.1 `src/index.ts`
@@ -393,6 +409,33 @@ index
   -> upload artifacts
 ```
 
+### 4.1.2 画面ボタン手動実行
+
+```text
+User
+  -> GitHub Pages dashboard
+  -> click "手動で実行する"
+  -> POST Cloudflare Worker
+  -> Worker validates target_date
+  -> Worker calls GitHub workflow_dispatch API with GH_PAT
+  -> Zoom Breakout Rooms workflow starts
+```
+
+### 4.1.3 実行履歴更新
+
+```text
+Zoom Breakout Rooms workflow
+  -> npm start
+  -> scripts/update-dashboard-history.mjs
+      -> update docs/data/runs.json
+  -> commit docs/data/runs.json
+  -> scripts/update-issue-dashboard.mjs
+      -> create/update dashboard issue
+  -> actions/configure-pages
+  -> actions/upload-pages-artifact
+  -> actions/deploy-pages
+```
+
 ### 4.2 対象日なし
 
 ```text
@@ -425,7 +468,15 @@ index
 zoom-room-batch/
   .github/
     workflows/
+      deploy-dashboard.yml
       zoom-breakout-rooms.yml
+  docs/
+    index.html
+    app.js
+    config.js
+    styles.css
+    data/
+      runs.json
   package.json
   package-lock.json
   tsconfig.json
@@ -444,6 +495,12 @@ zoom-room-batch/
     csv.ts
     dateUtils.ts
     roomNormalizer.ts
+  scripts/
+    register-github-actions-settings.mjs
+    update-dashboard-history.mjs
+    update-issue-dashboard.mjs
+  worker/
+    zoom-trigger-worker.js
   output/
     .gitkeep
     zoom-oauth-token.json
@@ -453,6 +510,100 @@ zoom-room-batch/
     .gitkeep
     YYYY-MM-DD.log
 ```
+
+## 5.1 GitHub Pages画面設計
+
+画面ファイル:
+
+```text
+docs/index.html
+docs/styles.css
+docs/app.js
+docs/config.js
+docs/data/runs.json
+```
+
+`docs/config.js`:
+
+```js
+window.YORUNEKO_ZOOM_CONFIG = {
+  triggerEndpoint: "https://yoruneko-zoom-trigger.swallowbath.workers.dev"
+};
+```
+
+画面初期表示:
+
+- 対象日入力欄にAsia/Tokyo基準の本日を設定する。
+- `docs/data/runs.json` を読み込み、履歴を表示する。
+
+手動実行:
+
+- `手動で実行する` ボタン押下で `triggerEndpoint` にPOSTする。
+- request body:
+
+```json
+{
+  "target_date": "2026-06-08"
+}
+```
+
+履歴更新:
+
+- `更新` ボタン押下で `docs/data/runs.json` をcache bust付きで再取得する。
+
+## 5.2 Cloudflare Worker設計
+
+Workerファイル:
+
+```text
+worker/zoom-trigger-worker.js
+```
+
+endpoint:
+
+```text
+POST https://yoruneko-zoom-trigger.swallowbath.workers.dev
+```
+
+request:
+
+```json
+{
+  "target_date": "2026-06-08"
+}
+```
+
+`target_date` は任意。空の場合、workflow側でAsia/Tokyo基準の当日を使用する。
+
+validation:
+
+- `target_date` が空でない場合、`YYYY-MM-DD` のみ許可する。
+- methodはPOSTのみ許可する。
+- CORSは `ALLOWED_ORIGIN` を許可する。
+
+GitHub API call:
+
+```http
+POST https://api.github.com/repos/asuka10ki/yoruneko-zoom/actions/workflows/zoom-breakout-rooms.yml/dispatches
+Authorization: Bearer {GH_PAT}
+Content-Type: application/json
+```
+
+body:
+
+```json
+{
+  "ref": "main",
+  "inputs": {
+    "target_date": "2026-06-08"
+  }
+}
+```
+
+secrets:
+
+- `GH_PAT` はCloudflare Worker Secretとして保持する。
+- `GH_PAT` をブラウザ、GitHub Pages、ログへ出力しない。
 
 ## 6. npm scripts
 

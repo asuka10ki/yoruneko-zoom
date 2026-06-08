@@ -32,6 +32,9 @@
 | Slack Incoming Webhook | 実行結果通知 |
 | Windowsタスクスケジューラ | Windows PCでの定期実行 |
 | GitHub Actions | 自宅PC不要の定期実行・手動実行 |
+| GitHub Pages | 利用者向け実行画面・実行結果一覧 |
+| Cloudflare Workers | GitHubアカウント不要で画面ボタン実行するための中継API |
+| GitHub Issues | 実行履歴ダッシュボードのバックアップ表示 |
 
 ## 4. 入力
 
@@ -329,6 +332,76 @@ output/result.json
 output/zoom-breakout-rooms.csv
 ```
 
+### 11.6 GitHub Pages実行画面
+
+GitHub Pagesで利用者向けの実行画面を提供する。
+
+URL:
+
+```text
+https://asuka10ki.github.io/yoruneko-zoom/
+```
+
+画面機能:
+
+- 対象日を表示する。
+- 対象日はAsia/Tokyo基準の本日をデフォルト設定する。
+- `今日` ボタンで対象日を本日に戻す。
+- `手動で実行する` ボタンで中継APIへ実行要求を送る。
+- `更新` ボタンで最新の実行履歴を再読み込みする。
+- 自動実行・手動実行の履歴を一覧表示する。
+- 成功/失敗、日付、ルーム数、Actionsログリンクを表示する。
+
+実行画面は静的HTML/JavaScript/CSSで構成する。GitHub token、Zoom token、Slack Webhook URLなどの秘密情報は画面に含めない。
+
+### 11.7 Cloudflare Worker中継API
+
+GitHub Pages単体ではGitHub Actionsを安全に起動できないため、Cloudflare Workerを中継APIとして使用する。
+
+処理フロー:
+
+```text
+利用者
+  -> GitHub Pages画面の「手動で実行する」ボタン
+  -> Cloudflare Worker
+  -> GitHub Actions workflow_dispatch API
+  -> Zoom Breakout Rooms workflow
+```
+
+Worker URL:
+
+```text
+https://yoruneko-zoom-trigger.swallowbath.workers.dev
+```
+
+Worker環境変数:
+
+```text
+GITHUB_OWNER=asuka10ki
+GITHUB_REPO=yoruneko-zoom
+WORKFLOW_FILE=zoom-breakout-rooms.yml
+GITHUB_REF=main
+ALLOWED_ORIGIN=https://asuka10ki.github.io
+```
+
+Worker Secret:
+
+```text
+GH_PAT
+```
+
+`GH_PAT` はWorker側にのみ保存し、ブラウザへ渡さない。GitHub Actions workflowをdispatchできる権限を持つtokenを設定する。
+
+### 11.8 実行履歴反映
+
+`Zoom Breakout Rooms` workflowは実行完了後、以下を行う。
+
+1. `docs/data/runs.json` に実行結果を追記する。
+2. GitHub Issue `Zoomブレイクアウトルーム実行ダッシュボード` を作成または更新する。
+3. `docs/` をGitHub Pagesへ再デプロイする。
+
+これにより、画面の `更新` ボタンで最新履歴を確認できる。
+
 ## 12. セキュリティ
 
 秘密情報:
@@ -339,5 +412,6 @@ output/zoom-breakout-rooms.csv
 - Zoom Client Secret
 - Zoom Refresh Token
 - GitHub Personal Access Token
+- Cloudflare Worker Secret
 
 これらはGit管理しない。
