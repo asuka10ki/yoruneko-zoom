@@ -2,8 +2,11 @@ name: Zoom Breakout Rooms
 
 on:
   schedule:
-    # 18:05 JST = 09:05 UTC. Avoid minute 0 because scheduled runs can be delayed or dropped under high load.
+    # Retry windows for 18:05, 18:15, and 18:30 JST.
+    # The job skips later windows when the target date already has a successful run.
     - cron: "5 9 * * *"
+    - cron: "15 9 * * *"
+    - cron: "30 9 * * *"
   workflow_dispatch:
     inputs:
       target_date:
@@ -16,6 +19,10 @@ permissions:
   issues: write
   pages: write
   id-token: write
+
+concurrency:
+  group: zoom-breakout-rooms-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   update-breakout-rooms:
@@ -34,41 +41,51 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       SLACK_NOTIFY_ON_SUCCESS: ${{ vars.SLACK_NOTIFY_ON_SUCCESS || 'true' }}
       GH_PAT: ${{ secrets.GH_PAT }}
-      TARGET_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.target_date || '' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Decide whether to run
+        id: run_decision
+        run: node scripts/decide-scheduled-run.mjs "${{ github.event_name }}" "${{ github.event_name == 'workflow_dispatch' && inputs.target_date || '' }}"
+
+      - name: Set target date
+        run: echo "TARGET_DATE=${{ steps.run_decision.outputs.target_date }}" >> "$GITHUB_ENV"
+
       - name: Setup Node.js
+        if: steps.run_decision.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
 
       - name: Install dependencies
+        if: steps.run_decision.outputs.should_run == 'true'
         run: npm ci
 
       - name: Build
+        if: steps.run_decision.outputs.should_run == 'true'
         run: npm run build
 
       - name: Run batch
+        if: steps.run_decision.outputs.should_run == 'true'
         id: run_batch
         continue-on-error: true
         run: npm start
 
       - name: Update dashboard history
-        if: always()
+        if: always() && steps.run_decision.outputs.should_run == 'true'
         run: |
           node scripts/update-dashboard-history.mjs \
             "${{ github.event_name }}" \
-            "${{ github.event_name == 'workflow_dispatch' && inputs.target_date || '' }}" \
+            "${{ steps.run_decision.outputs.target_date }}" \
             "${{ steps.run_batch.outcome }}" \
             "${{ github.run_id }}" \
             "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Commit dashboard history
-        if: always()
+        if: always() && steps.run_decision.outputs.should_run == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -77,27 +94,27 @@ jobs:
           git push
 
       - name: Update issue dashboard
-        if: always()
+        if: always() && steps.run_decision.outputs.should_run == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/update-issue-dashboard.mjs
 
       - name: Configure Pages
-        if: always()
+        if: always() && steps.run_decision.outputs.should_run == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload dashboard artifact
-        if: always()
+        if: always() && steps.run_decision.outputs.should_run == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs
 
       - name: Deploy dashboard to GitHub Pages
-        if: always()
+        if: always() && steps.run_decision.outputs.should_run == 'true'
         uses: actions/deploy-pages@v4
 
       - name: Upload logs and outputs
-        if: always()
+        if: always() && steps.run_decision.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: zoom-breakout-rooms-result
@@ -108,5 +125,5 @@ jobs:
           if-no-files-found: ignore
 
       - name: Fail workflow when batch failed
-        if: steps.run_batch.outcome != 'success'
+        if: steps.run_decision.outputs.should_run == 'true' && steps.run_batch.outcome != 'success'
         run: exit 1

@@ -391,6 +391,8 @@ index
 
 ```text
 GitHub Actions
+  -> scripts/decide-scheduled-run.mjs
+  -> 当日成功済みでなければ続行
   -> npm ci
   -> npm run build
   -> npm start
@@ -409,7 +411,25 @@ index
   -> upload artifacts
 ```
 
-### 4.1.2 画面ボタン手動実行
+### 4.1.2 GitHub Actionsスケジュール再試行
+
+```text
+schedule 18:05 JST
+  -> 当日成功済みでなければ実行
+
+schedule 18:15 JST
+  -> 18:05が成功済みならスキップ
+  -> 未成功なら実行
+
+schedule 18:30 JST
+  -> 18:05または18:15が成功済みならスキップ
+  -> 未成功なら実行
+```
+
+当日成功済みかどうかは `docs/data/runs.json` の `success: true` かつ `date: YYYY-MM-DD` で判定する。
+手動実行の場合はこのスキップ判定を行わず、指定された対象日で実行する。
+
+### 4.1.3 画面ボタン手動実行
 
 ```text
 User
@@ -421,7 +441,7 @@ User
   -> Zoom Breakout Rooms workflow starts
 ```
 
-### 4.1.3 実行履歴更新
+### 4.1.4 実行履歴更新
 
 ```text
 Zoom Breakout Rooms workflow
