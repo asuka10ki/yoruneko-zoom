@@ -178,10 +178,10 @@ https://asuka10ki.github.io/yoruneko-zoom/
 
 この画面では以下ができます。
 
-- GitHub Actions実行画面を開く
+- ボタンだけでGitHub Actionsを実行する
 - 実行履歴を確認する
 - 自動実行・手動実行の結果を一覧で見る
-- GitHubのRun workflow画面で任意日付を指定して手動実行する
+- 任意日付を指定して手動実行する
 
 実行履歴はGitHub Issueの `Zoomブレイクアウトルーム実行ダッシュボード` にも追記されます。
 
@@ -258,11 +258,47 @@ https://asuka10ki.github.io/yoruneko-zoom/
 
 操作:
 
-1. `実行する` を押す。
-2. GitHubのRun workflow画面で実行する。
-3. 実行後、画面に戻って `更新` を押す。
+1. 必要なら対象日を指定する。
+2. `実行する` を押す。
+3. 少し待ってから `更新` を押す。
 
-他の人が使う場合、その人にはリポジトリのWrite以上の権限が必要です。
+GitHubを使えない人でも、画面のボタンだけで実行できます。
+
+### ボタン実行API
+
+GitHub Pagesの静的HTMLだけではGitHub Actionsを安全に起動できないため、Cloudflare Workerを中継APIとして使います。
+
+Workerコード:
+
+```text
+worker/zoom-trigger-worker.js
+```
+
+Workerに設定する環境変数:
+
+```text
+GITHUB_OWNER=asuka10ki
+GITHUB_REPO=yoruneko-zoom
+WORKFLOW_FILE=zoom-breakout-rooms.yml
+GITHUB_REF=main
+ALLOWED_ORIGIN=https://asuka10ki.github.io
+```
+
+Workerに設定するSecret:
+
+```text
+GH_PAT
+```
+
+`GH_PAT` にはGitHub Actions workflowをdispatchできる権限が必要です。Fine-grained tokenを使う場合は、対象リポジトリに対してActionsのRead and write権限を付けます。
+
+Workerをデプロイしたら、`docs/config.js` の `triggerEndpoint` にWorkerのURLを設定します。
+
+```js
+window.YORUNEKO_ZOOM_CONFIG = {
+  triggerEndpoint: "https://your-worker.example.workers.dev"
+};
+```
 
 ### refresh token更新方式
 

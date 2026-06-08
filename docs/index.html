@@ -17,6 +17,12 @@
       </section>
 
       <section class="panel controls-panel">
+        <div class="field-row">
+          <label for="targetDate">対象日</label>
+          <input id="targetDate" type="date" />
+          <button id="todayButton" type="button">今日</button>
+        </div>
+
         <div class="button-row">
           <button id="runButton" type="button" class="primary-button">実行する</button>
         </div>
@@ -48,6 +54,7 @@
       </section>
     </main>
 
+    <script src="./config.js"></script>
     <script src="./app.js" type="module"></script>
   </body>
 </html>
