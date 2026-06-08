@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+
+logs/*
+!logs/.gitkeep
+output/*
+!output/.gitkeep
+output/zoom-oauth-token.json

@@ -1,0 +1,64 @@
+name: Zoom Breakout Rooms
+
+on:
+  schedule:
+    # 18:00 JST = 09:00 UTC
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: "Optional target date (YYYY-MM-DD). Empty means today in Asia/Tokyo."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  update-breakout-rooms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+      SHEET_NAME: ${{ vars.SHEET_NAME }}
+      TIMEZONE: ${{ vars.TIMEZONE }}
+      ZOOM_UPDATE_ENABLED: ${{ vars.ZOOM_UPDATE_ENABLED }}
+      ZOOM_CLIENT_ID: ${{ secrets.ZOOM_CLIENT_ID }}
+      ZOOM_CLIENT_SECRET: ${{ secrets.ZOOM_CLIENT_SECRET }}
+      ZOOM_REFRESH_TOKEN: ${{ secrets.ZOOM_REFRESH_TOKEN }}
+      ZOOM_MEETING_ID: ${{ secrets.ZOOM_MEETING_ID }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_NOTIFY_ON_SUCCESS: ${{ vars.SLACK_NOTIFY_ON_SUCCESS }}
+      GH_PAT: ${{ secrets.GH_PAT }}
+      TARGET_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.target_date || '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run batch
+        run: npm start
+
+      - name: Upload logs and outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zoom-breakout-rooms-result
+          path: |
+            logs/
+            output/result.json
+            output/zoom-breakout-rooms.csv
+          if-no-files-found: ignore
