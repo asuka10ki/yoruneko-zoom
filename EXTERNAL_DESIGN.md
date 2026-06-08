@@ -2,9 +2,9 @@
 
 ## 1. システム概要
 
-本システムは、公開Googleスプレッドシートの「ルーム管理」シートから当日分のブレイクアウトルーム名を取得し、Zoomのスケジュール済みミーティングへブレイクアウトルーム事前設定を登録するWindows向けCLIバッチである。
+本システムは、公開Googleスプレッドシートの「ルーム管理」シートから当日分のブレイクアウトルーム名を取得し、Zoomのスケジュール済みミーティングへブレイクアウトルーム事前設定を登録するCLIバッチである。
 
-実行画面は持たず、Windowsタスクスケジューラから毎日定刻に起動する。
+本番運用ではGitHub Actionsから毎日定刻に起動する。利用者はGitHub Pagesの画面から手動実行もできる。
 
 ## 2. 利用者と運用
 
@@ -16,7 +16,7 @@
 
 通常運用:
 
-1. Windowsタスクスケジューラが毎日18:00に `run_zoom_rooms.bat` を実行する。
+1. GitHub Actionsが毎日18:05 JST以降に自動実行する。
 2. バッチが当日の日付に対応するルーム名をスプレッドシートから取得する。
 3. CSVを出力する。
 4. Zoom APIで対象ミーティングを更新する。
@@ -30,7 +30,6 @@
 | Zoom REST API | ミーティングのブレイクアウトルーム事前設定更新 |
 | Zoom OAuth | Zoom REST API用アクセストークン取得 |
 | Slack Incoming Webhook | 実行結果通知 |
-| Windowsタスクスケジューラ | Windows PCでの定期実行 |
 | GitHub Actions | 自宅PC不要の定期実行・手動実行 |
 | GitHub Pages | 利用者向け実行画面・実行結果一覧 |
 | Cloudflare Workers | GitHubアカウント不要で画面ボタン実行するための中継API |
@@ -239,23 +238,7 @@ Slack通知失敗時:
 | 成功 | 0 |
 | 失敗 | 1 |
 
-## 10. Windowsタスクスケジューラ
-
-毎日18:00に以下を実行する。
-
-```text
-C:\asuka-windows\app\夜の猫町プラスzoom\run_zoom_rooms.bat
-```
-
-開始場所:
-
-```text
-C:\asuka-windows\app\夜の猫町プラスzoom
-```
-
-PCが起動しており、ネットワーク接続があることを前提とする。
-
-## 11. GitHub Actions運用
+## 10. GitHub Actions運用
 
 GitHub Actionsでは、自宅PCを起動せずにバッチを実行する。
 

@@ -258,7 +258,7 @@ type ZoomTokenFile = {
 OAuth refresh処理:
 
 1. GitHub Actionsでは `ZOOM_REFRESH_TOKEN` Secretを読む。
-2. Windows実行では `output/zoom-oauth-token.json` を読む。
+2. ローカル開発実行では `output/zoom-oauth-token.json` を読む。
 3. `grant_type=refresh_token` でZoom OAuth token endpointへPOSTする。
 4. 新しいaccess token / refresh tokenを保存する。
 5. ログに保存成功を出力する。
@@ -504,7 +504,6 @@ zoom-room-batch/
   README.md
   EXTERNAL_DESIGN.md
   DETAILED_DESIGN.md
-  run_zoom_rooms.bat
   src/
     index.ts
     config.ts
@@ -637,27 +636,7 @@ secrets:
 }
 ```
 
-## 7. バッチファイル
-
-`run_zoom_rooms.bat`:
-
-```bat
-@echo off
-cd /d "%~dp0"
-
-npm start
-
-if errorlevel 1 (
-  echo Zoom breakout room setup failed.
-  echo Please check logs and output\result.json.
-  exit /b 1
-) else (
-  echo Zoom breakout room setup succeeded.
-  exit /b 0
-)
-```
-
-## 8. Git管理対象外
+## 7. Git管理対象外
 
 `.gitignore` で以下を除外する。
 
@@ -672,7 +651,7 @@ output/zoom-oauth-token.json
 
 `logs/.gitkeep` と `output/.gitkeep` は管理対象にできる。
 
-## 9. 注意事項
+## 8. 注意事項
 
 - Slack Webhook URLとZoom Client Secretは秘密情報として扱う。
 - `output/zoom-oauth-token.json` はrefresh tokenを含むため秘密情報として扱う。
