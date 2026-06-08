@@ -14,6 +14,8 @@ on:
 permissions:
   contents: write
   issues: write
+  pages: write
+  id-token: write
 
 jobs:
   update-breakout-rooms:
@@ -79,6 +81,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/update-issue-dashboard.mjs
+
+      - name: Configure Pages
+        if: always()
+        uses: actions/configure-pages@v5
+
+      - name: Upload dashboard artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy dashboard to GitHub Pages
+        if: always()
+        uses: actions/deploy-pages@v4
 
       - name: Upload logs and outputs
         if: always()
