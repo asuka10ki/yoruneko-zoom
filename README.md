@@ -181,7 +181,7 @@ https://asuka10ki.github.io/yoruneko-zoom/
 - GitHub Actions実行画面を開く
 - 実行履歴を確認する
 - 自動実行・手動実行の結果を一覧で見る
-- 任意日付を指定して手動実行する
+- GitHubのRun workflow画面で任意日付を指定して手動実行する
 
 実行履歴はGitHub Issueの `Zoomブレイクアウトルーム実行ダッシュボード` にも追記されます。
 
@@ -258,19 +258,11 @@ https://asuka10ki.github.io/yoruneko-zoom/
 
 操作:
 
-1. `GitHub画面で実行` を押す。
+1. `実行する` を押す。
 2. GitHubのRun workflow画面で実行する。
 3. 実行後、画面に戻って `更新` を押す。
 
-画面から直接実行する場合:
-
-1. `この画面から実行するためのGitHub token` を開く。
-2. Actionsを実行できる自分のGitHub tokenを入力する。
-3. `一時保存` を押す。
-4. 必要なら対象日を指定する。
-5. `この画面から実行` を押す。
-
-他の人が使う場合、その人にはリポジトリのWrite以上の権限が必要です。画面から直接実行する場合は、その人自身のGitHub tokenも必要です。
+他の人が使う場合、その人にはリポジトリのWrite以上の権限が必要です。
 
 ### refresh token更新方式
 

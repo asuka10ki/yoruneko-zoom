@@ -17,26 +17,9 @@
       </section>
 
       <section class="panel controls-panel">
-        <div class="field-row">
-          <label for="targetDate">対象日</label>
-          <input id="targetDate" type="date" />
-          <button id="todayButton" type="button">今日</button>
-        </div>
-
         <div class="button-row">
-          <button id="openActionsButton" type="button" class="primary-button">GitHub画面で実行</button>
-          <button id="directRunButton" type="button">この画面から実行</button>
+          <button id="runButton" type="button" class="primary-button">実行する</button>
         </div>
-
-        <details class="token-box">
-          <summary>この画面から実行するためのGitHub token</summary>
-          <p>tokenはブラウザ内の一時保存だけに使い、リポジトリには送信しません。Actionsを実行できる権限を持つtokenが必要です。</p>
-          <div class="field-row">
-            <label for="githubToken">GitHub token</label>
-            <input id="githubToken" type="password" autocomplete="off" placeholder="github_pat_..." />
-            <button id="saveTokenButton" type="button">一時保存</button>
-          </div>
-        </details>
 
         <p id="message" class="message" role="status"></p>
       </section>

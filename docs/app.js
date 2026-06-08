@@ -2,80 +2,20 @@ const owner = "asuka10ki";
 const repo = "yoruneko-zoom";
 const workflowFile = "zoom-breakout-rooms.yml";
 const workflowUrl = `https://github.com/${owner}/${repo}/actions/workflows/${workflowFile}`;
-const dispatchUrl = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFile}/dispatches`;
-
-const targetDate = document.querySelector("#targetDate");
-const todayButton = document.querySelector("#todayButton");
-const openActionsButton = document.querySelector("#openActionsButton");
-const directRunButton = document.querySelector("#directRunButton");
-const saveTokenButton = document.querySelector("#saveTokenButton");
-const githubToken = document.querySelector("#githubToken");
+const runButton = document.querySelector("#runButton");
 const message = document.querySelector("#message");
 const runsBody = document.querySelector("#runsBody");
 const refreshButton = document.querySelector("#refreshButton");
 const summary = document.querySelector("#summary");
 
-githubToken.value = sessionStorage.getItem("github_actions_token") || "";
-
-todayButton.addEventListener("click", () => {
-  targetDate.value = formatDate(new Date());
-});
-
-openActionsButton.addEventListener("click", () => {
+runButton.addEventListener("click", () => {
   window.open(workflowUrl, "_blank", "noopener,noreferrer");
-});
-
-saveTokenButton.addEventListener("click", () => {
-  sessionStorage.setItem("github_actions_token", githubToken.value.trim());
-  showMessage("tokenをこのブラウザセッションに一時保存しました。");
-});
-
-directRunButton.addEventListener("click", async () => {
-  const token = githubToken.value.trim() || sessionStorage.getItem("github_actions_token") || "";
-  if (!token) {
-    showMessage("この画面から実行するにはGitHub tokenを入力してください。", true);
-    return;
-  }
-
-  directRunButton.disabled = true;
-  showMessage("GitHub Actionsを起動しています...");
-
-  try {
-    const body = {
-      ref: "main",
-      inputs: {}
-    };
-
-    if (targetDate.value) {
-      body.inputs.target_date = targetDate.value;
-    }
-
-    const response = await fetch(dispatchUrl, {
-      method: "POST",
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "X-GitHub-Api-Version": "2022-11-28"
-      },
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      throw new Error(`GitHub Actions起動失敗: ${response.status}`);
-    }
-
-    showMessage("GitHub Actionsを起動しました。結果は少し待ってから更新してください。");
-  } catch (error) {
-    showMessage(error instanceof Error ? error.message : String(error), true);
-  } finally {
-    directRunButton.disabled = false;
-  }
+  showMessage("GitHub Actionsの実行画面を開きました。Run workflowを押すと実行されます。");
 });
 
 refreshButton.addEventListener("click", loadRuns);
 
-await loadRuns();
+loadRuns();
 
 async function loadRuns() {
   try {
@@ -164,13 +104,6 @@ function statusText(success) {
 function showMessage(text, isError = false) {
   message.textContent = text;
   message.style.color = isError ? "var(--danger)" : "var(--muted)";
-}
-
-function formatDate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 function formatDateTime(value) {

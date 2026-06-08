@@ -96,10 +96,6 @@ input {
   width: 180px;
 }
 
-#githubToken {
-  width: min(520px, 100%);
-}
-
 button,
 .secondary-link {
   min-height: 40px;
@@ -132,16 +128,6 @@ button:hover,
 .button-row {
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.token-box {
-  border-top: 1px solid var(--line);
-  padding-top: 14px;
-}
-
-.token-box p {
-  color: var(--muted);
-  margin: 10px 0;
 }
 
 .message {
