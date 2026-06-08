@@ -21,15 +21,15 @@ jobs:
 
     env:
       SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
-      SHEET_NAME: ${{ vars.SHEET_NAME }}
-      TIMEZONE: ${{ vars.TIMEZONE }}
-      ZOOM_UPDATE_ENABLED: ${{ vars.ZOOM_UPDATE_ENABLED }}
+      SHEET_NAME: ${{ vars.SHEET_NAME || 'ルーム管理' }}
+      TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Tokyo' }}
+      ZOOM_UPDATE_ENABLED: ${{ vars.ZOOM_UPDATE_ENABLED || 'true' }}
       ZOOM_CLIENT_ID: ${{ secrets.ZOOM_CLIENT_ID }}
       ZOOM_CLIENT_SECRET: ${{ secrets.ZOOM_CLIENT_SECRET }}
       ZOOM_REFRESH_TOKEN: ${{ secrets.ZOOM_REFRESH_TOKEN }}
       ZOOM_MEETING_ID: ${{ secrets.ZOOM_MEETING_ID }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      SLACK_NOTIFY_ON_SUCCESS: ${{ vars.SLACK_NOTIFY_ON_SUCCESS }}
+      SLACK_NOTIFY_ON_SUCCESS: ${{ vars.SLACK_NOTIFY_ON_SUCCESS || 'true' }}
       GH_PAT: ${{ secrets.GH_PAT }}
       TARGET_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.target_date || '' }}
 

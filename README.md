@@ -201,6 +201,8 @@ SLACK_NOTIFY_ON_SUCCESS=true
 ZOOM_UPDATE_ENABLED=true
 ```
 
+workflow側にも同じデフォルト値を設定しているため、Variablesが未登録でも上記の値で実行されます。
+
 ### 自動実行
 
 GitHub ActionsはUTC基準なので、18:00 JSTに合わせて以下のcronで実行します。
