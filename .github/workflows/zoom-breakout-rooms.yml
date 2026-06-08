@@ -2,8 +2,8 @@ name: Zoom Breakout Rooms
 
 on:
   schedule:
-    # 18:00 JST = 09:00 UTC
-    - cron: "0 9 * * *"
+    # 18:05 JST = 09:05 UTC. Avoid minute 0 because scheduled runs can be delayed or dropped under high load.
+    - cron: "5 9 * * *"
   workflow_dispatch:
     inputs:
       target_date:

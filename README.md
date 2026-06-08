@@ -162,7 +162,7 @@ cd /d C:\asuka-windows\app\夜の猫町プラスzoom
 
 ## GitHub Actionsでの実行
 
-自宅PCを起動せず、GitHub Actionsから毎日18:00 JSTに実行できます。
+自宅PCを起動せず、GitHub Actionsから毎日18:05 JSTごろに実行できます。
 
 Workflow:
 
@@ -220,11 +220,13 @@ workflow側にも同じデフォルト値を設定しているため、Variables
 
 ### 自動実行
 
-GitHub ActionsはUTC基準なので、18:00 JSTに合わせて以下のcronで実行します。
+GitHub ActionsはUTC基準なので、18:05 JSTに合わせて以下のcronで実行します。
 
 ```yaml
-cron: "0 9 * * *"
+cron: "5 9 * * *"
 ```
+
+GitHub Actionsのスケジュール実行は毎時0分に集中しやすく、遅延または実行されない場合があるため、18:05 JSTにずらしています。
 
 ### 手動実行
 
