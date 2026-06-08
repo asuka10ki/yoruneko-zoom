@@ -12,7 +12,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   update-breakout-rooms:
@@ -50,7 +50,28 @@ jobs:
         run: npm run build
 
       - name: Run batch
+        id: run_batch
+        continue-on-error: true
         run: npm start
+
+      - name: Update dashboard history
+        if: always()
+        run: |
+          node scripts/update-dashboard-history.mjs \
+            "${{ github.event_name }}" \
+            "${{ github.event_name == 'workflow_dispatch' && inputs.target_date || '' }}" \
+            "${{ steps.run_batch.outcome }}" \
+            "${{ github.run_id }}" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Commit dashboard history
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data/runs.json
+          git diff --cached --quiet || git commit -m "Update dashboard history"
+          git push
 
       - name: Upload logs and outputs
         if: always()
@@ -62,3 +83,7 @@ jobs:
             output/result.json
             output/zoom-breakout-rooms.csv
           if-no-files-found: ignore
+
+      - name: Fail workflow when batch failed
+        if: steps.run_batch.outcome != 'success'
+        run: exit 1
