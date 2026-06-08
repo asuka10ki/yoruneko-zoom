@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   update-breakout-rooms:
@@ -72,6 +73,12 @@ jobs:
           git add docs/data/runs.json
           git diff --cached --quiet || git commit -m "Update dashboard history"
           git push
+
+      - name: Update issue dashboard
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/update-issue-dashboard.mjs
 
       - name: Upload logs and outputs
         if: always()

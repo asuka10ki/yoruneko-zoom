@@ -170,20 +170,17 @@ Workflow:
 .github/workflows/zoom-breakout-rooms.yml
 ```
 
-実行画面:
+実行ダッシュボード:
 
 ```text
-https://asuka10ki.github.io/yoruneko-zoom/
+GitHub Issues の「Zoomブレイクアウトルーム実行ダッシュボード」
 ```
 
-この画面では以下ができます。
+このIssueでは以下ができます。
 
-- GitHub Actions実行画面を開く
+- 手動実行画面を開く
 - 実行履歴を確認する
 - 自動実行・手動実行の結果を一覧で見る
-- 任意日付を指定して手動実行する
-
-「この画面から実行」を使う場合は、各実行者が自分のGitHub tokenをブラウザに一時入力する必要があります。tokenはブラウザのsessionStorageにのみ保存され、リポジトリには保存されません。
 
 ### GitHub Secrets
 
@@ -248,29 +245,17 @@ GitHub画面から実行する場合:
 5. 必要なら `target_date` を入力する。
 6. 実行する。
 
-### 実行画面から実行
+### 実行ダッシュボードから実行
 
-GitHub Pagesの実行画面を開きます。
+GitHub Issues の `Zoomブレイクアウトルーム実行ダッシュボード` を開きます。
 
-```text
-https://asuka10ki.github.io/yoruneko-zoom/
-```
+操作:
 
-安全な基本操作:
-
-1. `GitHub画面で実行` を押す。
+1. `手動実行する` を押す。
 2. GitHubのRun workflow画面で実行する。
-3. 実行後、画面に戻って `更新` を押す。
+3. 実行後、同じIssueに結果が追記される。
 
-画面から直接実行する場合:
-
-1. `この画面から実行するためのGitHub token` を開く。
-2. Actionsを実行できる自分のGitHub tokenを入力する。
-3. `一時保存` を押す。
-4. 必要なら対象日を指定する。
-5. `この画面から実行` を押す。
-
-他の人が使う場合、その人にはリポジトリのWrite以上の権限と、自分用のGitHub tokenが必要です。
+他の人が使う場合、その人にはリポジトリのWrite以上の権限が必要です。
 
 ### refresh token更新方式
 
