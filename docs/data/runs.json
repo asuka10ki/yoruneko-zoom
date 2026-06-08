@@ -1,6 +1,30 @@
 {
   "runs": [
     {
+      "recordedAt": "2026-06-08T08:00:30.932Z",
+      "eventName": "workflow_dispatch",
+      "requestedTargetDate": "2026-06-08",
+      "outcome": "success",
+      "runId": "27123959209",
+      "runUrl": "https://github.com/asuka10ki/yoruneko-zoom/actions/runs/27123959209",
+      "success": true,
+      "date": "2026-06-08",
+      "meetingId": "89216377281",
+      "roomCount": 8,
+      "rooms": [
+        "（MTG）webビジネス書12冊",
+        "猫の集会A",
+        "猫の集会B",
+        "相談したい人と聞きたい人が集う部屋",
+        "ただ黙って読書する部屋",
+        "休憩室（マイク・カメラオフ）",
+        "予備１",
+        "予備２"
+      ],
+      "csvPath": "output/zoom-breakout-rooms.csv",
+      "logPath": "logs/2026-06-08.log"
+    },
+    {
       "recordedAt": "2026-06-08T07:51:58.569Z",
       "eventName": "workflow_dispatch",
       "requestedTargetDate": "2026-06-08",
