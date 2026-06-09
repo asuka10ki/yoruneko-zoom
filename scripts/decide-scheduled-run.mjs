@@ -4,12 +4,22 @@ import fsSync from "node:fs";
 const [, , eventName = "", requestedTargetDate = "", triggerSource = ""] = process.argv;
 const historyPath = "docs/data/runs.json";
 const timezone = process.env.TIMEZONE || "Asia/Tokyo";
+const scheduleStartHour = Number.parseInt(process.env.SCHEDULE_START_HOUR_JST || "18", 10);
+const scheduleEndHour = Number.parseInt(process.env.SCHEDULE_END_HOUR_JST || "19", 10);
 
 const targetDate = requestedTargetDate || todayInTimezone(timezone);
 let shouldRun = true;
 let reason = "manual run";
 
-if (eventName === "schedule" || triggerSource === "cloudflare_cron") {
+if (eventName === "schedule") {
+  const currentHour = currentHourInTimezone(timezone);
+  if (currentHour < scheduleStartHour || currentHour >= scheduleEndHour) {
+    shouldRun = false;
+    reason = `github schedule outside allowed JST window: hour=${currentHour}, allowed=${scheduleStartHour}-${scheduleEndHour}`;
+  }
+}
+
+if (shouldRun && (eventName === "schedule" || triggerSource === "cloudflare_cron")) {
   const history = await readJson(historyPath, { runs: [] });
   const runs = Array.isArray(history.runs) ? history.runs : [];
   const alreadySucceeded = runs.some((run) => run?.success === true && run?.date === targetDate);
@@ -45,6 +55,17 @@ function todayInTimezone(timeZone) {
 
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
+}
+
+function currentHourInTimezone(timeZone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    hour12: false
+  }).formatToParts(new Date());
+
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  return Number.parseInt(hour || "0", 10);
 }
 
 function writeOutput(name, value) {

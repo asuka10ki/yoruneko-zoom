@@ -453,10 +453,14 @@ schedule 18:15 JST
 schedule 18:30 JST
   -> 18:05または18:15が成功済みならスキップ
   -> 未成功なら実行
+
+scheduleが遅延して19:00 JST以降に起動
+  -> バッチ本体を実行せずスキップ
 ```
 
 当日成功済みかどうかは `docs/data/runs.json` の `success: true` かつ `date: YYYY-MM-DD` で判定する。
 GitHub `schedule` とCloudflare Cron起動の場合はこの判定を行う。画面手動実行の場合は指定された対象日で実行する。
+GitHub `schedule` のみ、JST 18:00以上19:00未満を実行許可時間帯とする。Cloudflare Cronと画面手動実行はこの時刻制限を受けない。
 
 ### 4.1.5 画面ボタン手動実行
 
