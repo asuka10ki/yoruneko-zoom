@@ -177,6 +177,8 @@ ZOOM_REFRESH_TOKEN
 ZOOM_MEETING_ID
 SLACK_WEBHOOK_URL
 GH_PAT
+HEARTBEAT_URL
+HEARTBEAT_SECRET
 ```
 
 `ZOOM_REFRESH_TOKEN` は、ローカルPCの `output/zoom-oauth-token.json` にある `refreshToken` の値を登録します。`accessToken` や `expiresAt` は登録不要です。
@@ -199,6 +201,24 @@ ZOOM_UPDATE_ENABLED=true
 workflow側にも同じデフォルト値を設定しているため、Variablesが未登録でも上記の値で実行されます。
 
 ### 自動実行
+
+本番の主起動元はCloudflare Worker Cron Triggerです。Cloudflare CronはUTC基準なので、JST 18:00はUTC 09:00として設定します。
+
+Cloudflare Worker:
+
+```text
+0 9 * * *
+```
+
+これは毎日18:00 JSTにWorkerを起動し、WorkerからGitHub Actionsの `workflow_dispatch` APIを呼び出します。
+
+18:20 JSTまでに成功heartbeatがCloudflare KVに記録されていない場合、WorkerがSlackへ警告します。
+
+```text
+20 9 * * *
+```
+
+GitHub Actionsのscheduleはバックアップ起動元として残します。
 
 GitHub ActionsはUTC基準なので、18:05 / 18:15 / 18:30 JSTに合わせて以下のcronで実行します。
 
@@ -249,9 +269,9 @@ https://asuka10ki.github.io/yoruneko-zoom/
 
 GitHubを使えない人でも、画面のボタンだけで実行できます。
 
-### ボタン実行API
+### ボタン実行API / Cloudflare Cron
 
-GitHub Pagesの静的HTMLだけではGitHub Actionsを安全に起動できないため、Cloudflare Workerを中継APIとして使います。
+GitHub Pagesの静的HTMLだけではGitHub Actionsを安全に起動できないため、Cloudflare Workerを中継APIとして使います。同じWorkerにCron Triggerも設定し、定刻実行とheartbeat監視を行います。
 
 Workerコード:
 
@@ -264,18 +284,34 @@ Workerに設定する環境変数:
 ```text
 GITHUB_OWNER=asuka10ki
 GITHUB_REPO=yoruneko-zoom
-WORKFLOW_FILE=zoom-breakout-rooms.yml
+GITHUB_WORKFLOW_ID=zoom-breakout-rooms.yml
 GITHUB_REF=main
 ALLOWED_ORIGIN=https://asuka10ki.github.io
+DISPATCH_CRONS=0 9 * * *
+MONITOR_CRONS=20 9 * * *
 ```
 
 Workerに設定するSecret:
 
 ```text
-GH_PAT
+GITHUB_TOKEN
+SLACK_WEBHOOK_URL
+HEARTBEAT_SECRET
 ```
 
-`GH_PAT` にはGitHub Actions workflowをdispatchできる権限が必要です。Fine-grained tokenを使う場合は、対象リポジトリに対してActionsのRead and write権限を付けます。
+`GITHUB_TOKEN` にはGitHub Actions workflowをdispatchできる権限が必要です。Fine-grained tokenを使う場合は、対象リポジトリに対してActionsのRead and write権限を付けます。
+
+Workerに設定するKV binding:
+
+```text
+Binding name: HEARTBEATS
+```
+
+GitHub Actions側にも同じ `HEARTBEAT_SECRET` をSecretとして登録します。`HEARTBEAT_URL` には以下のようにWorkerのheartbeat endpointを登録します。
+
+```text
+https://your-worker.example.workers.dev/heartbeat
+```
 
 Workerをデプロイしたら、`docs/config.js` の `triggerEndpoint` にWorkerのURLを設定します。
 
@@ -320,6 +356,9 @@ output/zoom-breakout-rooms.csv
 
 - `ZOOM_REFRESH_TOKEN` が未設定、期限切れ、または古い
 - `GH_PAT` にSecrets更新権限がない
+- Workerの `GITHUB_TOKEN` にActions実行権限がない
+- WorkerのCron TriggerまたはKV binding `HEARTBEATS` が未設定
+- `HEARTBEAT_URL` / `HEARTBEAT_SECRET` が未設定
 - Slack Webhook URLが無効
 - スプレッドシートに対象日付の行がない
 - Zoom一般アプリのscopeが不足している

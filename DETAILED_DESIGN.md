@@ -16,7 +16,7 @@ index.ts
   └─ slack.ts
 ```
 
-GitHub Pages画面とCloudflare Worker中継APIを含めた全体構成:
+GitHub Pages画面、Cloudflare Worker Cron、heartbeat監視を含めた全体構成:
 
 ```text
 docs/index.html
@@ -24,12 +24,16 @@ docs/index.html
        ├─ docs/config.js
        ├─ docs/data/runs.json
        └─ Cloudflare Worker triggerEndpoint
-             └─ GitHub Actions workflow_dispatch
-                   └─ zoom-breakout-rooms.yml
-                        ├─ npm start
-                        ├─ scripts/update-dashboard-history.mjs
-                        ├─ scripts/update-issue-dashboard.mjs
-                        └─ GitHub Pages deploy
+              ├─ fetch: 画面ボタンからGitHub Actions workflow_dispatch
+              ├─ scheduled 18:00 JST: GitHub Actions workflow_dispatch
+              ├─ scheduled 18:20 JST: Cloudflare KV heartbeat確認
+              └─ /heartbeat: GitHub Actionsから結果を保存
+                    └─ zoom-breakout-rooms.yml
+                         ├─ npm start
+                         ├─ scripts/send-heartbeat.mjs
+                         ├─ scripts/update-dashboard-history.mjs
+                         ├─ scripts/update-issue-dashboard.mjs
+                         └─ GitHub Pages deploy
 ```
 
 ## 2. モジュール設計
@@ -408,10 +412,35 @@ index
       -> PATCH /meetings/{id}
   -> writeResult(success)
   -> notifySuccess
+  -> scripts/send-heartbeat.mjs
+      -> POST Cloudflare Worker /heartbeat
+      -> Cloudflare KV HEARTBEATSへ保存
   -> upload artifacts
 ```
 
-### 4.1.2 GitHub Actionsスケジュール再試行
+### 4.1.2 Cloudflare Cron主起動
+
+```text
+Cloudflare Cron 18:00 JST / 09:00 UTC
+  -> worker.scheduled()
+  -> GitHub Actions workflow_dispatch API
+     inputs.trigger_source = cloudflare_cron
+  -> Zoom Breakout Rooms workflow starts
+```
+
+### 4.1.3 Cloudflare heartbeat監視
+
+```text
+Cloudflare Cron 18:20 JST / 09:20 UTC
+  -> worker.scheduled()
+  -> Cloudflare KV HEARTBEATS
+      -> heartbeat:YYYY-MM-DD:latest を取得
+  -> success=true がなければSlackへ警告
+```
+
+Slack警告は同一日で重複しないよう、`alert:YYYY-MM-DD:missing-success-heartbeat` をKVへ保存する。
+
+### 4.1.4 GitHub Actionsスケジュール再試行
 
 ```text
 schedule 18:05 JST
@@ -427,9 +456,9 @@ schedule 18:30 JST
 ```
 
 当日成功済みかどうかは `docs/data/runs.json` の `success: true` かつ `date: YYYY-MM-DD` で判定する。
-手動実行の場合はこのスキップ判定を行わず、指定された対象日で実行する。
+GitHub `schedule` とCloudflare Cron起動の場合はこの判定を行う。画面手動実行の場合は指定された対象日で実行する。
 
-### 4.1.3 画面ボタン手動実行
+### 4.1.5 画面ボタン手動実行
 
 ```text
 User
@@ -437,11 +466,11 @@ User
   -> click "手動で実行する"
   -> POST Cloudflare Worker
   -> Worker validates target_date
-  -> Worker calls GitHub workflow_dispatch API with GH_PAT
+  -> Worker calls GitHub workflow_dispatch API with GITHUB_TOKEN
   -> Zoom Breakout Rooms workflow starts
 ```
 
-### 4.1.4 実行履歴更新
+### 4.1.6 実行履歴更新
 
 ```text
 Zoom Breakout Rooms workflow
@@ -516,6 +545,8 @@ zoom-room-batch/
     roomNormalizer.ts
   scripts/
     register-github-actions-settings.mjs
+    decide-scheduled-run.mjs
+    send-heartbeat.mjs
     update-dashboard-history.mjs
     update-issue-dashboard.mjs
   worker/

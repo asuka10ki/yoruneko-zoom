@@ -118,6 +118,10 @@ function summaryCard(label, value) {
 }
 
 function eventText(eventName) {
+  if (eventName === "cloudflare_cron") return "自動(Cloudflare)";
+  if (eventName === "github_schedule") return "自動(GitHub)";
+  if (eventName === "dashboard") return "画面手動";
+  if (eventName === "manual") return "手動";
   if (eventName === "schedule") return "自動";
   if (eventName === "workflow_dispatch") return "手動";
   return eventName || "-";

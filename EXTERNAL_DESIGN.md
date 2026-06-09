@@ -30,9 +30,10 @@
 | Zoom REST API | ミーティングのブレイクアウトルーム事前設定更新 |
 | Zoom OAuth | Zoom REST API用アクセストークン取得 |
 | Slack Incoming Webhook | 実行結果通知 |
-| GitHub Actions | 自宅PC不要の定期実行・手動実行 |
+| Cloudflare Workers | 主起動元、画面ボタン実行API、heartbeat監視 |
+| Cloudflare KV | heartbeat保存先 |
+| GitHub Actions | バッチ本体実行、バックアップ定期実行、手動実行 |
 | GitHub Pages | 利用者向け実行画面・実行結果一覧 |
-| Cloudflare Workers | GitHubアカウント不要で画面ボタン実行するための中継API |
 | GitHub Issues | 実行履歴ダッシュボードのバックアップ表示 |
 
 ## 4. 入力
@@ -254,7 +255,13 @@ workflow:
 .github/workflows/zoom-breakout-rooms.yml
 ```
 
-schedule:
+主起動元はCloudflare Worker Cron Triggerとする。Cloudflare CronはUTC基準のため、JST 18:00はUTC 09:00として設定する。
+
+```text
+0 9 * * *
+```
+
+GitHub Actionsのscheduleはバックアップ起動元として残す。
 
 ```yaml
 cron: "5 9 * * *"
@@ -276,6 +283,8 @@ ZOOM_REFRESH_TOKEN
 ZOOM_MEETING_ID
 SLACK_WEBHOOK_URL
 GH_PAT
+HEARTBEAT_URL
+HEARTBEAT_SECRET
 ```
 
 ### 11.2 GitHub Variables
@@ -341,9 +350,9 @@ https://asuka10ki.github.io/yoruneko-zoom/
 
 実行画面は静的HTML/JavaScript/CSSで構成する。GitHub token、Zoom token、Slack Webhook URLなどの秘密情報は画面に含めない。
 
-### 11.7 Cloudflare Worker中継API
+### 11.7 Cloudflare Worker中継API / Cron
 
-GitHub Pages単体ではGitHub Actionsを安全に起動できないため、Cloudflare Workerを中継APIとして使用する。
+GitHub Pages単体ではGitHub Actionsを安全に起動できないため、Cloudflare Workerを中継APIとして使用する。同じWorkerにCron Triggerを設定し、定刻起動とheartbeat監視も行う。
 
 処理フロー:
 
@@ -353,6 +362,16 @@ GitHub Pages単体ではGitHub Actionsを安全に起動できないため、Clo
   -> Cloudflare Worker
   -> GitHub Actions workflow_dispatch API
   -> Zoom Breakout Rooms workflow
+
+Cloudflare Cron 18:00 JST
+  -> Cloudflare Worker scheduled handler
+  -> GitHub Actions workflow_dispatch API
+  -> Zoom Breakout Rooms workflow
+
+Cloudflare Cron 18:20 JST
+  -> Cloudflare Worker scheduled handler
+  -> Cloudflare KVのheartbeatを確認
+  -> 成功heartbeatがなければSlack警告
 ```
 
 Worker URL:
@@ -366,18 +385,53 @@ Worker環境変数:
 ```text
 GITHUB_OWNER=asuka10ki
 GITHUB_REPO=yoruneko-zoom
-WORKFLOW_FILE=zoom-breakout-rooms.yml
+GITHUB_WORKFLOW_ID=zoom-breakout-rooms.yml
 GITHUB_REF=main
 ALLOWED_ORIGIN=https://asuka10ki.github.io
+DISPATCH_CRONS=0 9 * * *
+MONITOR_CRONS=20 9 * * *
 ```
 
 Worker Secret:
 
 ```text
-GH_PAT
+GITHUB_TOKEN
+SLACK_WEBHOOK_URL
+HEARTBEAT_SECRET
 ```
 
-`GH_PAT` はWorker側にのみ保存し、ブラウザへ渡さない。GitHub Actions workflowをdispatchできる権限を持つtokenを設定する。
+`GITHUB_TOKEN` はWorker側にのみ保存し、ブラウザへ渡さない。GitHub Actions workflowをdispatchできる権限を持つtokenを設定する。
+
+KV binding:
+
+```text
+HEARTBEATS
+```
+
+### 11.7.1 heartbeat
+
+GitHub Actionsはバッチ実行後、Workerの `/heartbeat` endpointへ結果を送信する。
+
+保存先はCloudflare KV `HEARTBEATS` とする。
+
+heartbeat内容:
+
+- 実行日時
+- 成功/失敗
+- GitHub Actions run id
+- run URL
+- 起動元
+- エラー概要
+
+KV key:
+
+```text
+heartbeat:YYYY-MM-DD:latest
+heartbeat:latest
+heartbeat:YYYY-MM-DD:RUN_ID
+```
+
+18:20 JSTまでに当日分の成功heartbeatがない場合、WorkerはSlackへ警告通知する。
 
 ### 11.8 実行履歴反映
 

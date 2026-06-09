@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 
-const [, , eventName = "", requestedTargetDate = ""] = process.argv;
+const [, , eventName = "", requestedTargetDate = "", triggerSource = ""] = process.argv;
 const historyPath = "docs/data/runs.json";
 const timezone = process.env.TIMEZONE || "Asia/Tokyo";
 
@@ -9,7 +9,7 @@ const targetDate = requestedTargetDate || todayInTimezone(timezone);
 let shouldRun = true;
 let reason = "manual run";
 
-if (eventName === "schedule") {
+if (eventName === "schedule" || triggerSource === "cloudflare_cron") {
   const history = await readJson(historyPath, { runs: [] });
   const runs = Array.isArray(history.runs) ? history.runs : [];
   const alreadySucceeded = runs.some((run) => run?.success === true && run?.date === targetDate);
@@ -22,6 +22,7 @@ writeOutput("should_run", shouldRun ? "true" : "false");
 writeOutput("target_date", targetDate);
 
 console.log(`event: ${eventName || "(unknown)"}`);
+console.log(`trigger_source: ${triggerSource || "(none)"}`);
 console.log(`target_date: ${targetDate}`);
 console.log(`should_run: ${shouldRun}`);
 console.log(`reason: ${reason}`);

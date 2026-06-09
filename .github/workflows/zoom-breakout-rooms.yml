@@ -13,6 +13,10 @@ on:
         description: "Optional target date (YYYY-MM-DD). Empty means today in Asia/Tokyo."
         required: false
         type: string
+      trigger_source:
+        description: "Optional trigger source label."
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -41,6 +45,9 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       SLACK_NOTIFY_ON_SUCCESS: ${{ vars.SLACK_NOTIFY_ON_SUCCESS || 'true' }}
       GH_PAT: ${{ secrets.GH_PAT }}
+      HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
+      HEARTBEAT_SECRET: ${{ secrets.HEARTBEAT_SECRET }}
+      TRIGGER_SOURCE: ${{ github.event_name == 'schedule' && 'github_schedule' || github.event.inputs.trigger_source || 'manual' }}
 
     steps:
       - name: Checkout
@@ -48,10 +55,17 @@ jobs:
 
       - name: Decide whether to run
         id: run_decision
-        run: node scripts/decide-scheduled-run.mjs "${{ github.event_name }}" "${{ github.event_name == 'workflow_dispatch' && inputs.target_date || '' }}"
+        run: node scripts/decide-scheduled-run.mjs "${{ github.event_name }}" "${{ github.event_name == 'workflow_dispatch' && inputs.target_date || '' }}" "${TRIGGER_SOURCE}"
 
       - name: Set target date
         run: echo "TARGET_DATE=${{ steps.run_decision.outputs.target_date }}" >> "$GITHUB_ENV"
+
+      - name: Show trigger source
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "trigger_source=${TRIGGER_SOURCE}"
+          echo "target_date=${{ steps.run_decision.outputs.target_date }}"
+          echo "should_run=${{ steps.run_decision.outputs.should_run }}"
 
       - name: Setup Node.js
         if: steps.run_decision.outputs.should_run == 'true'
@@ -78,7 +92,18 @@ jobs:
         if: always() && steps.run_decision.outputs.should_run == 'true'
         run: |
           node scripts/update-dashboard-history.mjs \
+            "${TRIGGER_SOURCE}" \
+            "${{ steps.run_decision.outputs.target_date }}" \
+            "${{ steps.run_batch.outcome }}" \
+            "${{ github.run_id }}" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Send heartbeat
+        if: always() && steps.run_decision.outputs.should_run == 'true'
+        run: |
+          node scripts/send-heartbeat.mjs \
             "${{ github.event_name }}" \
+            "${TRIGGER_SOURCE}" \
             "${{ steps.run_decision.outputs.target_date }}" \
             "${{ steps.run_batch.outcome }}" \
             "${{ github.run_id }}" \
