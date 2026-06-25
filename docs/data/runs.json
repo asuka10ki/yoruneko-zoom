@@ -1,6 +1,30 @@
 {
   "runs": [
     {
+      "recordedAt": "2026-06-25T09:00:47.500Z",
+      "eventName": "cloudflare_cron",
+      "requestedTargetDate": "2026-06-25",
+      "outcome": "success",
+      "runId": "28158970297",
+      "runUrl": "https://github.com/asuka10ki/yoruneko-zoom/actions/runs/28158970297",
+      "success": true,
+      "date": "2026-06-25",
+      "meetingId": "89216377281",
+      "roomCount": 8,
+      "rooms": [
+        "猫町歌会",
+        "猫の集会A",
+        "猫の集会B",
+        "相談したい人と聞きたい人が集う部屋",
+        "ただ黙って読書する部屋",
+        "休憩室（マイク・カメラオフ）",
+        "予備１",
+        "予備２"
+      ],
+      "csvPath": "output/zoom-breakout-rooms.csv",
+      "logPath": "logs/2026-06-25.log"
+    },
+    {
       "recordedAt": "2026-06-24T09:00:43.012Z",
       "eventName": "cloudflare_cron",
       "requestedTargetDate": "2026-06-24",
