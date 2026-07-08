@@ -64,10 +64,7 @@ export default {
 async function dispatchWorkflow(env, options = {}) {
   const owner = requiredEnv(env, "GITHUB_OWNER");
   const repo = requiredEnv(env, "GITHUB_REPO");
-  const githubToken = env.GITHUB_TOKEN || env.GH_PAT;
-  if (!githubToken) {
-    throw new Error("GITHUB_TOKEN is required");
-  }
+  const auth = await getGitHubAuth(env, repo);
 
   const workflowFile = env.GITHUB_WORKFLOW_ID || env.WORKFLOW_FILE || defaultWorkflowFile;
   const inputs = {
@@ -82,7 +79,7 @@ async function dispatchWorkflow(env, options = {}) {
     method: "POST",
     headers: {
       Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${githubToken}`,
+      Authorization: `Bearer ${auth.token}`,
       "Content-Type": "application/json",
       "User-Agent": "yoruneko-zoom-trigger",
       "X-GitHub-Api-Version": "2022-11-28"
@@ -100,8 +97,179 @@ async function dispatchWorkflow(env, options = {}) {
   return {
     ok: true,
     targetDate: options.targetDate || "",
-    triggerSource: inputs.trigger_source
+    triggerSource: inputs.trigger_source,
+    authMode: auth.mode
   };
+}
+
+async function getGitHubAuth(env, repo) {
+  if (env.GITHUB_APP_ID && env.GITHUB_APP_INSTALLATION_ID && env.GITHUB_APP_PRIVATE_KEY) {
+    return {
+      mode: "github_app",
+      token: await createGitHubAppInstallationToken(env, repo)
+    };
+  }
+
+  const token = env.GITHUB_TOKEN || env.GH_PAT;
+  if (!token) {
+    throw new Error("GitHub authentication is required");
+  }
+
+  return {
+    mode: "token",
+    token
+  };
+}
+
+async function createGitHubAppInstallationToken(env, repo) {
+  const appJwt = await createGitHubAppJwt({
+    appId: requiredEnv(env, "GITHUB_APP_ID"),
+    privateKeyPem: requiredEnv(env, "GITHUB_APP_PRIVATE_KEY")
+  });
+  const installationId = requiredEnv(env, "GITHUB_APP_INSTALLATION_ID");
+
+  const response = await fetch(`https://api.github.com/app/installations/${installationId}/access_tokens`, {
+    method: "POST",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${appJwt}`,
+      "Content-Type": "application/json",
+      "User-Agent": "yoruneko-zoom-trigger",
+      "X-GitHub-Api-Version": "2022-11-28"
+    },
+    body: JSON.stringify({
+      repositories: [repo],
+      permissions: {
+        actions: "write",
+        metadata: "read"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub App installation token failed: status=${response.status}`);
+  }
+
+  const body = await response.json();
+  if (!body.token) {
+    throw new Error("GitHub App installation token response did not include a token");
+  }
+
+  return body.token;
+}
+
+async function createGitHubAppJwt(options) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = {
+    alg: "RS256",
+    typ: "JWT"
+  };
+  const payload = {
+    iat: now - 60,
+    exp: now + 9 * 60,
+    iss: options.appId
+  };
+  const signingInput = `${base64UrlJson(header)}.${base64UrlJson(payload)}`;
+  const privateKey = await importRsaPrivateKey(options.privateKeyPem);
+  const signature = await crypto.subtle.sign(
+    {
+      name: "RSASSA-PKCS1-v1_5"
+    },
+    privateKey,
+    new TextEncoder().encode(signingInput)
+  );
+
+  return `${signingInput}.${base64UrlBytes(new Uint8Array(signature))}`;
+}
+
+async function importRsaPrivateKey(privateKeyPem) {
+  const normalizedPem = normalizePem(privateKeyPem);
+  const der = pemToBytes(normalizedPem);
+  const pkcs8Der = normalizedPem.includes("BEGIN RSA PRIVATE KEY") ? pkcs1ToPkcs8(der) : der;
+
+  return await crypto.subtle.importKey(
+    "pkcs8",
+    pkcs8Der,
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256"
+    },
+    false,
+    ["sign"]
+  );
+}
+
+function normalizePem(value) {
+  return String(value).trim().replace(/\\n/g, "\n");
+}
+
+function pemToBytes(pem) {
+  const base64 = pem
+    .replace(/-----BEGIN [^-]+-----/g, "")
+    .replace(/-----END [^-]+-----/g, "")
+    .replace(/\s+/g, "");
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes.buffer;
+}
+
+function pkcs1ToPkcs8(pkcs1Der) {
+  const pkcs1Bytes = new Uint8Array(pkcs1Der);
+  const version = new Uint8Array([0x02, 0x01, 0x00]);
+  const rsaEncryptionOid = new Uint8Array([
+    0x30, 0x0d,
+    0x06, 0x09,
+    0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01,
+    0x05, 0x00
+  ]);
+  const privateKey = asn1(0x04, pkcs1Bytes);
+  return asn1(0x30, concatBytes(version, rsaEncryptionOid, privateKey)).buffer;
+}
+
+function asn1(tag, value) {
+  return concatBytes(new Uint8Array([tag]), asn1Length(value.length), value);
+}
+
+function asn1Length(length) {
+  if (length < 128) {
+    return new Uint8Array([length]);
+  }
+
+  const bytes = [];
+  let value = length;
+  while (value > 0) {
+    bytes.unshift(value & 0xff);
+    value >>= 8;
+  }
+
+  return new Uint8Array([0x80 | bytes.length, ...bytes]);
+}
+
+function concatBytes(...parts) {
+  const length = parts.reduce((total, part) => total + part.length, 0);
+  const result = new Uint8Array(length);
+  let offset = 0;
+  for (const part of parts) {
+    result.set(part, offset);
+    offset += part.length;
+  }
+  return result;
+}
+
+function base64UrlJson(value) {
+  return base64UrlBytes(new TextEncoder().encode(JSON.stringify(value)));
+}
+
+function base64UrlBytes(bytes) {
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 async function handleHeartbeat(request, env, corsHeaders) {

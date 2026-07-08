@@ -423,6 +423,8 @@ index
 ```text
 Cloudflare Cron 18:00 JST / 09:00 UTC
   -> worker.scheduled()
+  -> GitHub App JWTを生成
+  -> GitHub App installation tokenを発行
   -> GitHub Actions workflow_dispatch API
      inputs.trigger_source = cloudflare_cron
   -> Zoom Breakout Rooms workflow starts
@@ -470,7 +472,8 @@ User
   -> click "手動で実行する"
   -> POST Cloudflare Worker
   -> Worker validates target_date
-  -> Worker calls GitHub workflow_dispatch API with GITHUB_TOKEN
+  -> Worker creates GitHub App installation token
+  -> Worker calls GitHub workflow_dispatch API with installation token
   -> Zoom Breakout Rooms workflow starts
 ```
 

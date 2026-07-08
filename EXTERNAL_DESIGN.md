@@ -396,12 +396,23 @@ MONITOR_CRONS=20 9 * * *
 Worker Secret:
 
 ```text
-GITHUB_TOKEN
+GITHUB_APP_ID
+GITHUB_APP_INSTALLATION_ID
+GITHUB_APP_PRIVATE_KEY
 SLACK_WEBHOOK_URL
 HEARTBEAT_SECRET
 ```
 
-`GITHUB_TOKEN` はWorker側にのみ保存し、ブラウザへ渡さない。GitHub Actions workflowをdispatchできる権限を持つtokenを設定する。
+Cloudflare WorkerはGitHub Appの秘密鍵から短命のinstallation tokenを発行し、そのtokenでGitHub Actions workflowをdispatchする。
+
+GitHub Appに必要なRepository permissions:
+
+```text
+Actions: Read and write
+Metadata: Read
+```
+
+GitHub Appは対象リポジトリ `asuka10ki/yoruneko-zoom` のみにインストールする。旧方式として `GITHUB_TOKEN` または `GH_PAT` が設定されている場合はフォールバックできるが、期限切れリスクがあるため通常運用では使わない。
 
 KV binding:
 

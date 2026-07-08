@@ -295,12 +295,25 @@ MONITOR_CRONS=20 9 * * *
 Workerに設定するSecret:
 
 ```text
-GITHUB_TOKEN
+GITHUB_APP_ID
+GITHUB_APP_INSTALLATION_ID
+GITHUB_APP_PRIVATE_KEY
 SLACK_WEBHOOK_URL
 HEARTBEAT_SECRET
 ```
 
-`GITHUB_TOKEN` にはGitHub Actions workflowをdispatchできる権限が必要です。Fine-grained tokenを使う場合は、対象リポジトリに対してActionsのRead and write権限を付けます。
+Cloudflare WorkerはGitHub Appの秘密鍵から短命のinstallation tokenを発行し、そのtokenでGitHub Actions workflowをdispatchします。Personal Access Tokenの期限切れを避けるため、本番起動にはGitHub App方式を使います。
+
+GitHub Appに必要なRepository permissions:
+
+```text
+Actions: Read and write
+Metadata: Read
+```
+
+GitHub Appは `asuka10ki/yoruneko-zoom` のみにインストールしてください。
+
+旧方式として `GITHUB_TOKEN` または `GH_PAT` が設定されている場合はフォールバックできますが、期限切れリスクがあるため通常運用では使いません。
 
 Workerに設定するKV binding:
 
@@ -357,7 +370,7 @@ output/zoom-breakout-rooms.csv
 
 - `ZOOM_REFRESH_TOKEN` が未設定、期限切れ、または古い
 - `GH_PAT` にSecrets更新権限がない
-- Workerの `GITHUB_TOKEN` にActions実行権限がない
+- WorkerのGitHub App設定が未設定、またはActions実行権限がない
 - WorkerのCron TriggerまたはKV binding `HEARTBEATS` が未設定
 - `HEARTBEAT_URL` / `HEARTBEAT_SECRET` が未設定
 - Slack Webhook URLが無効
