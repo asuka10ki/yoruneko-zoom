@@ -87,6 +87,8 @@ jobs:
         if: steps.run_decision.outputs.should_run == 'true'
         id: run_batch
         continue-on-error: true
+        env:
+          ZOOM_REFRESH_TOKEN: ${{ secrets.ZOOM_REFRESH_TOKEN }}
         run: npm start
 
       - name: Update dashboard history
