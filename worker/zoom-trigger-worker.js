@@ -91,7 +91,9 @@ async function dispatchWorkflow(env, options = {}) {
   });
 
   if (!response.ok) {
-    throw new Error(`GitHub Actions dispatch failed: status=${response.status}`);
+    const errorBody = await safeResponseJson(response);
+    const githubMessage = typeof errorBody.message === "string" ? `, message=${errorBody.message}` : "";
+    throw new Error(`GitHub Actions dispatch failed: status=${response.status}, auth_mode=${auth.mode}${githubMessage}`);
   }
 
   return {
@@ -156,6 +158,14 @@ async function createGitHubAppInstallationToken(env, repo) {
   }
 
   return body.token;
+}
+
+async function safeResponseJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
 }
 
 async function createGitHubAppJwt(options) {
