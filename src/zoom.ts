@@ -76,6 +76,9 @@ async function getUserOAuthAccessToken(config: ZoomConfig, logger: Logger): Prom
       return await refreshUserOAuthToken(config, token.refreshToken, logger);
     } catch (error) {
       logger.error(`Zoom OAuth refresh失敗: ${error instanceof Error ? error.message : String(error)}`);
+      if (isGitHubActions()) {
+        throw error;
+      }
       logger.info("初回認可フローを開始します");
     }
   }
