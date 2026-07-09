@@ -66,6 +66,7 @@ jobs:
           echo "trigger_source=${TRIGGER_SOURCE}"
           echo "target_date=${{ steps.run_decision.outputs.target_date }}"
           echo "should_run=${{ steps.run_decision.outputs.should_run }}"
+          echo "zoom_refresh_token_present=${{ secrets.ZOOM_REFRESH_TOKEN != '' }}"
 
       - name: Setup Node.js
         if: steps.run_decision.outputs.should_run == 'true'
