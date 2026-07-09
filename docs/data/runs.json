@@ -1,6 +1,20 @@
 {
   "runs": [
     {
+      "recordedAt": "2026-07-09T01:51:24.623Z",
+      "eventName": "manual_user_token_test",
+      "requestedTargetDate": "2026-07-09",
+      "outcome": "failure",
+      "runId": "28988433841",
+      "runUrl": "https://github.com/asuka10ki/yoruneko-zoom/actions/runs/28988433841",
+      "success": false,
+      "date": "2026-07-09",
+      "meetingId": "89216377281",
+      "error": "ZOOM_REFRESH_TOKEN is required in GitHub Actions",
+      "csvPath": "output/zoom-breakout-rooms.csv",
+      "logPath": "logs/2026-07-09.log"
+    },
+    {
       "recordedAt": "2026-07-09T01:49:26.072Z",
       "eventName": "dashboard",
       "requestedTargetDate": "2026-07-09",
