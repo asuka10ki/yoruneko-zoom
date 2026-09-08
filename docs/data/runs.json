@@ -1,6 +1,29 @@
 {
   "runs": [
     {
+      "recordedAt": "2026-09-08T09:01:21.548Z",
+      "eventName": "cloudflare_cron",
+      "requestedTargetDate": "2026-09-08",
+      "outcome": "success",
+      "runId": "34207662971",
+      "runUrl": "https://github.com/asuka10ki/yoruneko-zoom/actions/runs/34207662971",
+      "success": true,
+      "date": "2026-09-08",
+      "meetingId": "89216377281",
+      "roomCount": 7,
+      "rooms": [
+        "（MTG）ZINE部",
+        "猫の集会A",
+        "猫の集会B",
+        "相談したい人と聞きたい人が集う部屋",
+        "ただ黙って読書する部屋",
+        "休憩室（マイク・カメラオフ）",
+        "予備"
+      ],
+      "csvPath": "output/zoom-breakout-rooms.csv",
+      "logPath": "logs/2026-09-08.log"
+    },
+    {
       "recordedAt": "2026-09-07T09:01:04.959Z",
       "eventName": "cloudflare_cron",
       "requestedTargetDate": "2026-09-07",
