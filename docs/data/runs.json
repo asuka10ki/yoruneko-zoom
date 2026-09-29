@@ -1,6 +1,29 @@
 {
   "runs": [
     {
+      "recordedAt": "2026-09-29T09:00:53.740Z",
+      "eventName": "cloudflare_cron",
+      "requestedTargetDate": "2026-09-29",
+      "outcome": "success",
+      "runId": "36546353245",
+      "runUrl": "https://github.com/asuka10ki/yoruneko-zoom/actions/runs/36546353245",
+      "success": true,
+      "date": "2026-09-29",
+      "meetingId": "89216377281",
+      "roomCount": 7,
+      "rooms": [
+        "(MTG)國分功一朗3連発",
+        "猫の集会A",
+        "猫の集会B",
+        "相談したい人と聞きたい人が集う部屋",
+        "ただ黙って読書する部屋",
+        "休憩室（マイク・カメラオフ）",
+        "予備"
+      ],
+      "csvPath": "output/zoom-breakout-rooms.csv",
+      "logPath": "logs/2026-09-29.log"
+    },
+    {
       "recordedAt": "2026-09-28T09:00:36.241Z",
       "eventName": "cloudflare_cron",
       "requestedTargetDate": "2026-09-28",
@@ -2187,30 +2210,6 @@
       ],
       "csvPath": "output/zoom-breakout-rooms.csv",
       "logPath": "logs/2026-06-27.log"
-    },
-    {
-      "recordedAt": "2026-06-26T09:00:37.723Z",
-      "eventName": "cloudflare_cron",
-      "requestedTargetDate": "2026-06-26",
-      "outcome": "success",
-      "runId": "28228149795",
-      "runUrl": "https://github.com/asuka10ki/yoruneko-zoom/actions/runs/28228149795",
-      "success": true,
-      "date": "2026-06-26",
-      "meetingId": "89216377281",
-      "roomCount": 8,
-      "rooms": [
-        "帰ってきたCAT STREAM(時間は22：00－23：15までお願いします。)",
-        "猫の集会A",
-        "猫の集会B",
-        "相談したい人と聞きたい人が集う部屋",
-        "ただ黙って読書する部屋",
-        "休憩室（マイク・カメラオフ）",
-        "予備１",
-        "予備２"
-      ],
-      "csvPath": "output/zoom-breakout-rooms.csv",
-      "logPath": "logs/2026-06-26.log"
     }
   ]
 }
