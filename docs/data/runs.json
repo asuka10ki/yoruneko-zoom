@@ -1,6 +1,28 @@
 {
   "runs": [
     {
+      "recordedAt": "2026-11-04T09:00:48.675Z",
+      "eventName": "cloudflare_cron",
+      "requestedTargetDate": "2026-11-04",
+      "outcome": "success",
+      "runId": "41803907057",
+      "runUrl": "https://github.com/asuka10ki/yoruneko-zoom/actions/runs/41803907057",
+      "success": true,
+      "date": "2026-11-04",
+      "meetingId": "89216377281",
+      "roomCount": 6,
+      "rooms": [
+        "猫の集会A",
+        "猫の集会B",
+        "相談したい人と聞きたい人が集う部屋",
+        "ただ黙って読書する部屋",
+        "休憩室（マイク・カメラオフ）",
+        "予備"
+      ],
+      "csvPath": "output/zoom-breakout-rooms.csv",
+      "logPath": "logs/2026-11-04.log"
+    },
+    {
       "recordedAt": "2026-11-03T09:00:58.665Z",
       "eventName": "cloudflare_cron",
       "requestedTargetDate": "2026-11-03",
@@ -2229,29 +2251,6 @@
       ],
       "csvPath": "output/zoom-breakout-rooms.csv",
       "logPath": "logs/2026-07-26.log"
-    },
-    {
-      "recordedAt": "2026-07-25T09:00:22.095Z",
-      "eventName": "cloudflare_cron",
-      "requestedTargetDate": "2026-07-25",
-      "outcome": "success",
-      "runId": "30152073020",
-      "runUrl": "https://github.com/asuka10ki/yoruneko-zoom/actions/runs/30152073020",
-      "success": true,
-      "date": "2026-07-25",
-      "meetingId": "89216377281",
-      "roomCount": 7,
-      "rooms": [
-        "猫の集会A",
-        "猫の集会B",
-        "相談したい人と聞きたい人が集う部屋",
-        "ただ黙って読書する部屋",
-        "休憩室（マイク・カメラオフ）",
-        "予備１",
-        "予備２"
-      ],
-      "csvPath": "output/zoom-breakout-rooms.csv",
-      "logPath": "logs/2026-07-25.log"
     }
   ]
 }
